@@ -40,5 +40,3 @@ def get_title(movie_name, season=None, episode=None) -> dict[str, str | Any]:
 
             }
 
-
-print(get_title('inception'))
