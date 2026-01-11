@@ -1,72 +1,37 @@
-from typing import  Union, Any
-import requests
-from imdb import Cinemagoer
+from typing import Any
+from omdbapi.movie_search import GetMovie
+from dotenv import load_dotenv
+import os
 
-ia = Cinemagoer()
+load_dotenv()
+movie_key = GetMovie(os.getenv("MOVIE_KEY"))
 
-
-
-def search_movie(movie_name) -> list[dict[str, Union[Union[int, str], Any]]]:
-    result = ia.search_movie(movie_name)
-    print(result)
-    movies = []
-    for count, value in enumerate(result, start=1):
-        title = value['title']
-
-        streaming_link = f'https://vidsrc.to/embed/movie/tt{value.movieID}'
-        url = f"https://www.imdb.com/title/tt{value.movieID}/"
-        response = requests.get(streaming_link, timeout=10)
-
-        try:
-            if response.status_code == 200:
-                if movie_name.lower().strip() == title.lower().strip():
-                    movie_info = {
-
-                        "title": title,
-                        "url": url,
-                        "streaming_link": streaming_link
-                    }
-
-                    movies.append(movie_info)
-
-                    print(f""" {count} - Title: {title}
-                                IMDB Link: {url}
-                                Streaming Link: {streaming_link}
-                                
-                                """)
-        except requests.RequestException as e:
-            print(f"Error fetching streaming link for {title}: {e}")
-    return movies
+""""
+Retrieves movie or series information including streaming links.
+"""
 
 
-def search_series(series_name, season, episode) -> list[dict[str, Union[Union[int, str], Any]]]:
-    result = ia.search_movie(series_name)
-    series = []
-    for count, value in enumerate(result, start=1):
-        title = value['title']
-        streaming_link = f'https://vidsrc.to/embed/tv/tt{value.movieID}/{season}/{episode}'
-        imdb_link = f'https://www.imdb.com/title/tt{value.movieID}/'
+def get_title(movie_name, series=False, season=None, episode=None) -> dict[str, str | Any]:
+    result = movie_key.get_movie(movie_name)
+    title = result['title']
+    imdb_id = result['imdbid']
 
-        response = requests.get(streaming_link)
+    if series:
+        if season is None or episode is None:
+            raise ValueError("Season and Episode must be provided for series.")
+        return {
+            "title": title,
+            "year": result.get("year", "N/A"),
+            "imdb": f"https://www.imdb.com/title/{imdb_id}",
+            "stream": f"https://vidsrc.me/embed/tv/{imdb_id}/{season}/{episode}"
+        }
 
-        if response.status_code == 200:
-            if series_name.lower() == title.lower():
-                series_info = {
-                    "count": count,
-                    "title": title,
-                    "url": imdb_link,
-                    "streaming_link": streaming_link
-                }
-                print(f""" {count} - Title: {title})
-                    IMDB Link: {imdb_link}
-                    Streaming Link: {streaming_link}
-                    """)
+    else:
+        return {
 
-                series.append(series_info)
-    return series
-
-
-if __name__ == '__main__':
-    search_movie("Inception")
-  
-
+            "title": title,
+            "year": result.get("year", "N/A"),
+            "type": result.get("type", "movie"),
+            "imdb": f"https://www.imdb.com/title/{imdb_id}",
+            "stream": f"https://vidsrc.me/embed/movie/{imdb_id}"
+        }

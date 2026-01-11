@@ -2,7 +2,7 @@ import asyncio
 import os
 import discord
 from discord.ext import commands
-from movie_link import search_movie, search_series
+from movie_link import get_title
 from dotenv import load_dotenv
 load_dotenv()
 DISCORD_KEY = os.getenv("CLIENT_KEY")
@@ -16,17 +16,16 @@ client = discord.Client(intents=intents)
 
 @bot.command()
 async def movie(ctx, *, name):
-    film = search_movie(name)
+    film = get_title(name)
     name = name.upper()
     if not film:
         await ctx.send(f"No movies found for {name}")
         return
 
     em = discord.Embed(title=f"Movies Found: ", colour=discord.Color.brand_green())
-    for movie in film:
-        em.add_field(
-            name=f"{movie['title']}",
-            value=f"[IMDB Link]({movie['url']})\n[Streaming Link]({movie['streaming_link']})",
+    em.add_field(
+            name=f"{film['title']}",
+            value=f"[IMDB Link]({film['imdb']})\n[Streaming Link]({film['stream']})",
             inline=False
         )
 
@@ -48,15 +47,13 @@ async def series(ctx, *, name):
     try:
         season = await prompt(ctx, message="What season?", timeout=10)
         episode = await prompt(ctx, message="What episode?", timeout=10)
-        response = search_series(name, season, episode)
-
-        em = discord.Embed(title=f"Series Found: ", colour=discord.Color.blue())
-        for show in response:
-            em.add_field(
-                name=f"{show['title']}",
-                value=f"[IMDB Link]({show['url']}) [Streaming Link]({show['streaming_link']})",
-                inline=False
-            )
+        response = get_title(name, series=True, season=season, episode=episode)
+        em = discord.Embed(title=f"Series Found:", colour=discord.Color.blue())
+        em.add_field(
+            name=f"{response['title']} - Season {season} Episode {episode}",
+            value=f"[IMDB Link]({response['imdb']})\n[Streaming Link]({response['stream']})",
+            inline=False
+        )
 
         await ctx.send(embed=em)
     except asyncio.TimeoutError as e:
