@@ -47,7 +47,7 @@ async def series(ctx, *, name):
     try:
         season = await prompt(ctx, message="What season?", timeout=10)
         episode = await prompt(ctx, message="What episode?", timeout=10)
-        response = get_title(name, series=True, season=season, episode=episode)
+        response = get_title(name, season=season, episode=episode)
         em = discord.Embed(title=f"Series Found:", colour=discord.Color.blue())
         em.add_field(
             name=f"{response['title']} - Season {season} Episode {episode}",
